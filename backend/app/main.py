@@ -37,7 +37,7 @@ def meta():
 @app.post("/api/offers")
 async def offers(req: OfferRequest):
     result = await run_in_threadpool(engine.make_offers, req.company.model_dump(), req.loan_type, req.desired_amount)
-    result["ai"] = await run_in_threadpool(explain_offers, result)
+    result["ai"] = await run_in_threadpool(explain_offers, result) if req.explain else None
     return result
 
 
@@ -46,7 +46,7 @@ async def evaluate(req: EvaluateRequest):
     result = await run_in_threadpool(
         engine.evaluate_request, req.company.model_dump(), req.amount, req.term_years, req.loan_type, req.rate_pct
     )
-    result["ai"] = await run_in_threadpool(explain_evaluation, result)
+    result["ai"] = await run_in_threadpool(explain_evaluation, result) if req.explain else None
     return result
 
 

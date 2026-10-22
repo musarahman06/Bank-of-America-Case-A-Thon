@@ -245,6 +245,23 @@ def factors(company, loan, target, fixed_rate=None):
     return out
 
 
+def risk_matrix(company, loan_type, center_amount):
+    """Risk tier and score across amount x term around a center amount (for the heat matrix)."""
+    center = max(center_amount, 1)
+    amounts = [round(center * f, -4) for f in (0.5, 0.75, 1.0, 1.25, 1.5)]
+    terms = LOAN_TYPES[loan_type][3]
+    A, T = np.meshgrid(amounts, terms)
+    g = evaluate_grid(company, A.ravel(), T.ravel(), loan_type, target=center)
+    return {
+        "amounts": amounts,
+        "terms": terms,
+        "cells": [
+            {"amount": float(r.amount), "term_years": int(r.term_years), "risk": int(r.risk), "score": int(r.score)}
+            for r in g.itertuples()
+        ],
+    }
+
+
 # ---------- offer selection ----------
 
 def _candidates(company, loan_type, target, cap_max, anchor=None):
@@ -323,6 +340,7 @@ def make_offers(company, loan_type="Term Loan", desired_amount=None):
         "comparables": comparables(company, best),
         "history_curve": HISTORY_CURVE,
         "best_dscr_bucket": dscr_bucket(best["post_dscr"]),
+        "risk_matrix": risk_matrix(company, loan_type, best["amount"]),
         "model": METRICS,
     }
 
@@ -364,5 +382,6 @@ def evaluate_request(company, amount, term_years, loan_type, rate_pct=None):
         "comparables": comparables(company, loan),
         "history_curve": HISTORY_CURVE,
         "request_dscr_bucket": dscr_bucket(requested["post_dscr"]),
+        "risk_matrix": risk_matrix(company, loan_type, amount),
         "model": METRICS,
     }

@@ -18,7 +18,7 @@
 | `backend/app/engine.py` | Risk-based pricing, borrowing capacity (DSCR ≥ 1.25x, Debt/EBITDA ≤ 4.0x), candidate grid search, scoring, offer selection, what-if factor analysis, nearest-neighbor comparables. |
 | `backend/app/funding.py` | BofA funding mix from the 4Q25 investor presentation (Dec 31, 2025). Capital held = amount × risk weight × 11.4% CET1. |
 | `backend/app/explain.py` | Google **Gemini** writes plain-English explanations. Falls back to templated text if no key is set or the call fails. |
-| `frontend/` | React + Vite + TypeScript + Recharts. |
+| `frontend/` | React + Vite + TypeScript + Tailwind v4 + Recharts. BofA Executive Fintech theme; designs in `design-refs/`. Live scorecards re-score as you drag sliders (numbers only); the full analysis adds Gemini explanations. |
 
 **Score (1–100)** = 30% approval odds + 25% affordability (post-loan DSCR) + 20% cost (APR) + 15% fit to the amount needed + 10% low risk.
 **Risk (1–5)** buckets the predicted default probability: <2%, 2–5%, 5–10%, 10–20%, >20%.

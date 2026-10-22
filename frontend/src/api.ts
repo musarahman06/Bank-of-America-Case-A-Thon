@@ -15,8 +15,8 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 
 export const getMeta = () => call<Meta>('/meta')
 
-export const getOffers = (company: Company, loan_type: string, desired_amount: number | null) =>
-  call<OffersResult>('/offers', { company, loan_type, desired_amount })
+export const getOffers = (company: Company, loan_type: string, desired_amount: number | null, explain = true) =>
+  call<OffersResult>('/offers', { company, loan_type, desired_amount, explain })
 
 export const evaluateLoan = (
   company: Company,
@@ -24,4 +24,5 @@ export const evaluateLoan = (
   amount: number,
   term_years: number,
   rate_pct: number | null,
-) => call<EvaluateResult>('/evaluate', { company, loan_type, amount, term_years, rate_pct })
+  explain = true,
+) => call<EvaluateResult>('/evaluate', { company, loan_type, amount, term_years, rate_pct, explain })

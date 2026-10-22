@@ -1,32 +1,41 @@
+import { ArrowRight, ChevronDown, Clock, Database, Gauge, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { Reveal } from '../hooks/useReveal'
 import type { Meta } from '../types'
+import Badge, { riskTone, scoreTone } from '../ui/Badge'
+import Card from '../ui/Card'
+import RadialGauge from '../ui/RadialGauge'
+import Stat from '../ui/Stat'
 
 interface Props {
   meta: Meta | null
   onStart: (mode: 'offers' | 'evaluate') => void
 }
 
-// Illustrative offers for the ticker (synthetic, not real BofA loans).
+// Illustrative offers (synthetic, not real BofA loans).
 const SAMPLE_OFFERS = [
-  ['$12.5M', '7 YR', '6.42%', 91],
-  ['$4.2M', '3 YR', '6.10%', 88],
-  ['$38.0M', '10 YR', '7.05%', 79],
-  ['$9.8M', '5 YR', '6.77%', 94],
-  ['$21.3M', '15 YR', '6.25%', 86],
-  ['$2.6M', '2 YR', '7.40%', 72],
-  ['$57.8M', '7 YR', '6.49%', 95],
+  { name: 'Precision Parts Co.', terms: '$57.8M · 7 yr · 6.49%', score: 95, risk: 1 },
+  { name: 'CloudLedger Inc.', terms: '$10.6M · 10 yr · 7.04%', score: 93, risk: 1 },
+  { name: 'Harbor Home Goods', terms: '$5.6M · 5 yr · 8.53%', score: 74, risk: 3 },
+  { name: 'Harbor Home Goods (as requested)', terms: '$30.0M · 7 yr · 18.00%', score: 22, risk: 5 },
 ] as const
-
-const WORDS = ['Instant offers', 'Scored 1–100', 'Risk 1–5', 'Explainable AI', 'Funding transparency', 'Mid-market ready', 'Seconds, not weeks', 'Reverse evaluation']
 
 const STEPS = [
-  ['Share your financials', 'Revenue, margins, debt, collateral, credit. Eight numbers you already know — no document upload to get started.'],
-  ['The model checks history', 'Gradient-boosted models trained on 6,000 historical mid-market loans estimate approval odds and default risk for every option.'],
-  ['Get three scored offers', 'Best Match, Maximum Capacity and Lowest Cost — each scored 1–100 and rated for risk 1–5, with the reasons spelled out.'],
-  ['Bring your own loan', 'Already know what you want? Evaluate it, see exactly what holds it back, and get alternatives that score higher.'],
-  ['See where the money comes from', 'Every offer shows how it is funded across Bank of America’s balance sheet — deposits, debt and capital.'],
+  ['Share financials', 'Eight numbers you already know, or upload a CSV.'],
+  ['Model checks history', '6,000 historical loans estimate approval and default odds.'],
+  ['Three scored offers', 'Best Match, Maximum Capacity and Lowest Cost.'],
+  ['Evaluate your own', 'See what holds your loan back, plus better options.'],
+  ['Follow the money', 'How BofA funds it: deposits, debt and capital.'],
 ] as const
+
+const WEIGHTS = [
+  { part: 'Approval odds', w: 30 },
+  { part: 'Affordability', w: 25 },
+  { part: 'Cost', w: 20 },
+  { part: 'Fit to need', w: 15 },
+  { part: 'Low risk', w: 10 },
+]
 
 const FAQ = [
   ['What is Loan Clarity?', 'A Case-A-Thon prototype that gives mid-market businesses an instant, explainable view of what they can borrow from Bank of America, instead of waiting weeks for a decision.'],
@@ -39,7 +48,6 @@ const FAQ = [
 
 const CITIES = [
   ['Charlotte', 'America/New_York'],
-  ['New York', 'America/New_York'],
   ['London', 'Europe/London'],
   ['Hong Kong', 'Asia/Hong_Kong'],
 ] as const
@@ -55,196 +63,181 @@ function useNow() {
 
 export default function Landing({ meta, onStart }: Props) {
   const now = useNow()
-  const [openStep, setOpenStep] = useState(0)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
   return (
-    <div className="landing">
-      {/* ---------- hero ---------- */}
-      <section className="l-hero">
-        <div className="l-hero-copy">
-          <p className="eyebrow">Bank of America · Case-A-Thon · Option A</p>
-          <h1 className="display">
-            Loan answers
-            <br />
-            in <span className="accent">seconds.</span>
-            <br />
-            Not weeks.
-          </h1>
-          <p className="l-lead">
-            Mid-market businesses see what they can borrow, what it will cost, and what might hold them back —
-            instantly, with every number explained.
-          </p>
-          <div className="l-ctas">
-            <button className="pill primary" onClick={() => onStart('offers')}>
-              Get my offers →
-            </button>
-            <button className="pill ghost" onClick={() => onStart('evaluate')}>
-              Evaluate my loan
-            </button>
-          </div>
-        </div>
-
-        <div className="l-stage" aria-hidden>
-          <div className="glow" />
-          <div className="float-card">
-            <div className="fc-top">
-              <span className="fc-brand">Loan Clarity</span>
-              <span className="fc-chip">Best Match</span>
-            </div>
-            <div className="fc-amount">$57.8M</div>
-            <div className="fc-meta">Term Loan · 7 years · 6.49%</div>
-            <div className="fc-row">
-              <div className="fc-ring">
-                <span>95</span>
-              </div>
-              <div className="fc-risk">
-                <div>
-                  <i className="on" />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </div>
-                <small>Risk 1/5 · Very Low</small>
-              </div>
-            </div>
-          </div>
-          <div className="toast t1">
-            <b>✓</b> Offer ready · Score 94
-          </div>
-          <div className="toast t2">
-            <b className="g">●</b> Approval odds 92%
-          </div>
-          <div className="toast t3">
-            <b className="o">▲</b> Capacity up to $96.4M
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- marquees ---------- */}
-      <section className="marquee-wrap" aria-label="Sample offers (illustrative)">
-        <div className="marquee orange">
-          <div className="track">
-            {[...SAMPLE_OFFERS, ...SAMPLE_OFFERS].map(([amt, term, rate, score], i) => (
-              <span key={i} className="tick">
-                {amt} <em>·</em> {term} <em>·</em> {rate} <em>·</em> <b>SCORE {score}</b>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="marquee navy reverse">
-          <div className="track">
-            {[...WORDS, ...WORDS].map((w, i) => (
-              <span key={i} className="tick word">
-                {w} <em>✦</em>
-              </span>
-            ))}
-          </div>
-        </div>
-        <p className="marquee-note">Sample offers shown are illustrative.</p>
-      </section>
-
-      {/* ---------- how it works ---------- */}
-      <section className="l-section">
-        <Reveal className="l-head">
-          <span className="count">05</span>
-          <h2 className="display sm">
-            Built for the way
-            <br />
-            businesses borrow.
-          </h2>
-        </Reveal>
-        <ol className="steps">
-          {STEPS.map(([title, body], i) => (
-            <Reveal as="li" key={title} delay={i * 70} className={openStep === i ? 'open' : ''}>
-              <button
-                className="step-btn"
-                onClick={() => setOpenStep(i)}
-                onMouseEnter={() => setOpenStep(i)}
-                aria-expanded={openStep === i}
-              >
-                <span className="num">{String(i + 1).padStart(2, '0')}</span>
-                <span className="step-title">{title}</span>
-                <span className="plus">{openStep === i ? '–' : '+'}</span>
+    <main className="mx-auto max-w-[1320px] space-y-6 px-4 pb-20 pt-6 sm:px-6">
+      {/* ---------- hero banner ---------- */}
+      <section className="hero-stripes relative overflow-hidden rounded-2xl text-white shadow-lg">
+        <span className="absolute inset-y-0 left-0 w-2 bg-crimson" aria-hidden />
+        <div className="grid items-center gap-8 px-6 py-10 sm:px-10 lg:grid-cols-[1.25fr_1fr] lg:py-14">
+          <div>
+            <p className="text-sm font-semibold text-white/75">Bank of America Case-A-Thon 2026 · Option A</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              Loan answers in seconds,
+              <br />
+              not weeks.
+            </h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/80 sm:text-base">
+              Mid-market businesses see what they can borrow, what it will cost and what might hold them back, instantly, with every number explained.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button onClick={() => onStart('offers')} className="inline-flex items-center gap-2 rounded-lg bg-crimson px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-crimson-600">
+                Get my offers <ArrowRight size={16} />
               </button>
-              <p className="step-body">{body}</p>
-            </Reveal>
-          ))}
-        </ol>
+              <button onClick={() => onStart('evaluate')} className="rounded-lg border border-white/60 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10">
+                Evaluate my loan
+              </button>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-sm" aria-hidden>
+            <div className="rounded-2xl border border-white/20 bg-white p-5 text-slate-900 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-navy">Loan Clarity · sample</span>
+                <Badge tone="critical">Best Match</Badge>
+              </div>
+              <RadialGauge value={95} inner={92} label="score / 100" size={170} />
+              <div className="mt-3 grid grid-cols-3 divide-x divide-slate-100 rounded-lg border border-slate-100 text-center">
+                {[
+                  ['$57.8M', 'Amount'],
+                  ['6.49%', 'Rate'],
+                  ['1/5', 'Risk'],
+                ].map(([v, k]) => (
+                  <div key={k} className="py-2">
+                    <p className="font-mono text-sm font-bold tabular-nums">{v}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{k}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="absolute -left-6 top-10 hidden rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xl sm:block">
+              <span className="text-green-600">●</span> Approval odds 92%
+            </div>
+            <div className="absolute -right-4 bottom-8 hidden rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xl sm:block">
+              <span className="text-crimson">▲</span> Capacity up to $96.4M
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* ---------- stats + clocks ---------- */}
-      <section className="l-stats">
-        <div className="stats-grid">
-          <Reveal className="stat">
-            <b>0.2s</b>
-            <span>to generate three scored offers</span>
-          </Reveal>
-          <Reveal className="stat" delay={80}>
-            <b>6,000</b>
-            <span>historical loans behind every answer</span>
-          </Reveal>
-          <Reveal className="stat" delay={160}>
-            <b>{meta ? meta.model.approval_auc.toFixed(2) : '0.92'}</b>
-            <span>approval model accuracy (AUC)</span>
-          </Reveal>
-          <Reveal className="stat" delay={240}>
-            <b>3</b>
-            <span>offers, each scored 1–100 and risk-rated 1–5</span>
-          </Reveal>
-        </div>
-        <div className="clocks">
-          <span className="clocks-label">Answers around the clock</span>
-          {CITIES.map(([city, tz]) => (
-            <div key={city} className="clock">
-              <b>{now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</b>
-              <span>{city}</span>
+      {/* ---------- KPI tiles ---------- */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Historical loans" sub="Synthetic training set" value={(meta?.model.training_loans ?? 6000).toLocaleString()} badge={{ text: 'Seeded', tone: 'info' }} spark={[3, 4, 3.6, 5, 4.6, 6, 5.8, 7]} sparkColor="#16a34a" />
+        <Stat label="Time to three offers" sub="vs. weeks today" value="0.2s" badge={{ text: 'Instant', tone: 'good' }} spark={[9, 8, 8.5, 6, 5, 3, 2, 1]} sparkColor="#e31837" accent="crimson" />
+        <Stat label="Default model AUC" sub="Held-out accuracy" value={meta ? meta.model.default_auc.toFixed(2) : '0.83'} badge={{ text: 'Validated', tone: 'good' }} spark={[2, 3, 2.5, 4, 3.8, 5, 4.6, 5.5]} sparkColor="#2563eb" />
+        <Stat label="Approval model AUC" sub="Held-out accuracy" value={meta ? meta.model.approval_auc.toFixed(2) : '0.92'} badge={{ text: 'Validated', tone: 'good' }} spark={[3, 3.5, 4, 3.8, 5, 5.4, 6, 6.6]} sparkColor="#2563eb" />
+      </div>
+
+      {/* ---------- bento ---------- */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Reveal>
+          <Card title="How it works" sub="From financials to a scored, explained offer">
+            <ol className="relative grid gap-5 sm:grid-cols-5 sm:gap-2">
+              <span className="absolute left-[11px] top-3 h-[calc(100%-24px)] w-0.5 bg-slate-200 sm:left-[10%] sm:right-[10%] sm:top-[11px] sm:h-0.5 sm:w-auto" aria-hidden />
+              {STEPS.map(([title, body], i) => (
+                <li key={title} className="relative flex gap-3 sm:flex-col sm:items-center sm:text-center">
+                  <span className={`relative z-10 grid h-6 w-6 flex-none place-items-center rounded-full font-mono text-[11px] font-bold ${i < 3 ? 'bg-navy text-white' : 'border-2 border-navy bg-white text-navy'}`}>
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="text-[13px] font-bold text-slate-900">{title}</p>
+                    <p className="mt-0.5 text-xs leading-snug text-slate-500">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Card>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <Card title="How the 1–100 score is built" sub="Weights used for every offer and evaluation">
+            <div className="h-48 w-full">
+              <ResponsiveContainer>
+                <BarChart data={WEIGHTS} layout="vertical" margin={{ top: 0, right: 36, bottom: 0, left: 0 }} barCategoryGap="28%">
+                  <XAxis type="number" hide domain={[0, 35]} />
+                  <YAxis type="category" dataKey="part" width={100} tickLine={false} axisLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 600 }} />
+                  <Bar dataKey="w" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                    {WEIGHTS.map((w, i) => (
+                      <Cell key={w.part} fill={i === 0 ? '#012169' : i === 1 ? '#e31837' : ['#2563eb', '#0d9488', '#d97706'][i - 2]} />
+                    ))}
+                    <LabelList dataKey="w" position="right" formatter={(v: unknown) => `${v}%`} style={{ fill: '#0f172a', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
-      </section>
+          </Card>
+        </Reveal>
+
+        <Reveal>
+          <Card title="Sample results" sub="Demo companies, illustrative" bodyClassName="px-0 pb-2">
+            <ul className="divide-y divide-slate-100">
+              {SAMPLE_OFFERS.map((o) => (
+                <li key={o.name} className="flex items-center justify-between gap-3 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{o.name}</p>
+                    <p className="font-mono text-xs tabular-nums text-slate-500">{o.terms}</p>
+                  </div>
+                  <div className="flex flex-none items-center gap-2">
+                    <Badge tone={scoreTone(o.score)}>Score {o.score}</Badge>
+                    <Badge tone={riskTone(o.risk)} dot>Risk {o.risk}</Badge>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <Card title="Built for clarity" sub="What every answer includes">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                [Gauge, 'Score + risk', 'Every option scored 1–100 and risk-rated 1–5.'],
+                [ShieldCheck, 'What holds you back', 'Each factor checked against BofA guidelines, with a what-if.'],
+                [Database, 'Grounded in history', 'Compared with the most similar past loans.'],
+                [Clock, 'Around the clock', CITIES.map(([c, tz]) => `${c} ${now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`).join(' · ')],
+              ].map(([Icon, t, d]) => {
+                const I = Icon as typeof Gauge
+                return (
+                  <div key={t as string} className="rounded-lg border border-slate-100 bg-slate-50/70 p-3">
+                    <I size={18} className="text-navy" />
+                    <p className="mt-2 text-sm font-bold text-slate-900">{t as string}</p>
+                    <p className="mt-0.5 text-xs leading-snug text-slate-500">{d as string}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+        </Reveal>
+      </div>
 
       {/* ---------- FAQ ---------- */}
-      <section className="l-section">
-        <Reveal className="l-head">
-          <span className="count">{String(FAQ.length).padStart(2, '0')}</span>
-          <h2 className="display sm">
-            Frequently
-            <br />
-            asked questions
-          </h2>
-        </Reveal>
-        <div className="faq">
+      <Card title="Frequently asked questions" bodyClassName="px-0 pb-1">
+        <div className="divide-y divide-slate-100">
           {FAQ.map(([q, a], i) => (
-            <Reveal key={q} delay={i * 50} className={`faq-item${openFaq === i ? ' open' : ''}`}>
-              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} aria-expanded={openFaq === i}>
-                <span>{q}</span>
-                <span className="plus">{openFaq === i ? '–' : '+'}</span>
+            <div key={q}>
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} aria-expanded={openFaq === i} className="flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50">
+                {q}
+                <ChevronDown size={16} className={`flex-none text-slate-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
               </button>
-              <div className="faq-a">
-                <p>{a}</p>
-              </div>
-            </Reveal>
+              {openFaq === i && <p className="px-5 pb-4 text-sm leading-relaxed text-slate-600">{a}</p>}
+            </div>
           ))}
         </div>
-      </section>
+      </Card>
 
       {/* ---------- footer CTA ---------- */}
-      <section className="l-footer">
-        <h2 className="display">
-          The offer is
-          <br />
-          only the <span className="accent">beginning.</span>
-        </h2>
-        <button className="pill primary" onClick={() => onStart('offers')}>
-          Get my offers →
+      <section className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-navy px-6 py-8 text-white sm:flex-row sm:items-center sm:px-10">
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tight">Ready to see your offers?</h2>
+          <p className="mt-1 text-sm text-white/70">
+            Case-A-Thon prototype · synthetic training data · not a credit decision · funding figures illustrative (BofA 4Q25).
+          </p>
+        </div>
+        <button onClick={() => onStart('offers')} className="inline-flex flex-none items-center gap-2 rounded-lg bg-crimson px-5 py-3 text-sm font-bold text-white transition hover:bg-crimson-600">
+          Get my offers <ArrowRight size={16} />
         </button>
-        <p className="fine">
-          Case-A-Thon prototype · synthetic training data · not a credit decision · funding figures illustrative, from BofA’s 4Q25
-          investor presentation.
-        </p>
       </section>
-    </div>
+    </main>
   )
 }

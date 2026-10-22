@@ -69,23 +69,23 @@ export default function FundingSankey({ funding, title }: { funding: Funding; ti
   const deposits = funding.groups.find((g) => g.name === 'Client Deposits')?.amount ?? 0
 
   return (
-    <div className="card">
-      <h3>Where the money comes from inside Bank of America</h3>
-      <p className="sub">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">Where the money comes from inside Bank of America</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">
         {title}: how a {money(funding.loan_amount)} loan is funded across BofA's balance sheet, and how much of the
         bank's own capital regulators require it to set aside for this loan's risk.
       </p>
-      <div className="funding-kpis">
+      <div className="mb-3 flex flex-wrap gap-6 text-[13px] text-slate-500">
         <div>
-          <b>{pct(deposits / funding.loan_amount)}</b>
+          <b className="block font-mono text-xl tabular-nums text-navy">{pct(deposits / funding.loan_amount)}</b>
           from client deposits
         </div>
         <div>
-          <b>{money(funding.equity_capital_held)}</b>
+          <b className="block font-mono text-xl tabular-nums text-navy">{money(funding.equity_capital_held)}</b>
           BofA capital held ({pct(funding.risk_weight)} risk weight × {pct(funding.cet1_ratio, 1)} CET1)
         </div>
       </div>
-      <div className="chart tall">
+      <div className="h-80 w-full">
         <ResponsiveContainer>
           <Sankey
             data={{ nodes, links }}
@@ -103,7 +103,7 @@ export default function FundingSankey({ funding, title }: { funding: Funding; ti
                 const d = p?.payload
                 if (!active || !d) return null
                 return (
-                  <div className="tooltip">
+                  <div className="lc-tooltip">
                     {d.source && d.target ? (
                       <>
                         <b>
@@ -126,20 +126,20 @@ export default function FundingSankey({ funding, title }: { funding: Funding; ti
           </Sankey>
         </ResponsiveContainer>
       </div>
-      <div className="funding-bars" aria-label="Funding sources table">
+      <div className="mt-3 grid gap-2" aria-label="Funding sources table">
         {funding.sources.map((s) => (
-          <div className="funding-bar" key={s.name}>
-            <span>{s.name}</span>
-            <div className="track">
-              <div className="fill" style={{ width: `${(s.amount / funding.loan_amount) * 100}%`, background: GROUP_COLORS[s.group] }} />
+          <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 text-xs sm:grid-cols-[220px_1fr_110px]" key={s.name}>
+            <span className="text-slate-700">{s.name}</span>
+            <div className="col-span-2 h-2.5 overflow-hidden rounded bg-slate-100 sm:col-span-1 sm:row-auto row-start-2 sm:row-start-auto">
+              <div className="h-full rounded" style={{ width: `${(s.amount / funding.loan_amount) * 100}%`, background: GROUP_COLORS[s.group] }} />
             </div>
-            <b>
+            <b className="text-right font-mono tabular-nums text-slate-900">
               {money(s.amount)} · {pct(s.amount / funding.loan_amount)}
             </b>
           </div>
         ))}
       </div>
-      <p className="footnote">
+      <p className="mt-3 text-[11px] text-slate-400">
         {funding.note} Source: {funding.source}.
       </p>
     </div>

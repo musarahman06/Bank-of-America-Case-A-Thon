@@ -19,7 +19,7 @@ export interface Series {
   color: string
 }
 
-const AXIS = { stroke: 'var(--text-muted)', fontSize: 11, tickLine: false, axisLine: false }
+const AXIS = { stroke: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono, monospace', tickLine: false, axisLine: false }
 const GRID = <CartesianGrid stroke="var(--grid)" vertical={false} />
 
 interface TipProps {
@@ -32,7 +32,7 @@ function makeTip(fmt: (v: number) => string, title?: (label: string | number) =>
   return function Tip({ active, payload, label }: TipProps) {
     if (!active || !payload?.length) return null
     return (
-      <div className="tooltip">
+      <div className="lc-tooltip">
         <b>{title ? title(label ?? '') : label}</b>
         {payload.map((p) => (
           <div key={String(p.name)}>
@@ -47,10 +47,10 @@ function makeTip(fmt: (v: number) => string, title?: (label: string | number) =>
 
 export function Legend({ items, box = false }: { items: { name: string; color: string }[]; box?: boolean }) {
   return (
-    <div className="legend">
+    <div className="mb-2 flex flex-wrap gap-3.5 text-xs text-slate-600">
       {items.map((i) => (
-        <span key={i.name}>
-          <i className={box ? 'box' : ''} style={{ background: i.color }} />
+        <span key={i.name} className="inline-flex items-center gap-1.5">
+          <i className={box ? 'h-2.5 w-2.5 rounded-[3px]' : 'h-[3px] w-3 rounded-sm'} style={{ background: i.color }} />
           {i.name}
         </span>
       ))}
@@ -67,11 +67,11 @@ export function BalanceChart({ series }: { series: Series[] }) {
     return row
   })
   return (
-    <div className="card">
-      <h3>Balance owed over time</h3>
-      <p className="sub">How quickly each option is paid down (lines of credit stay flat until maturity).</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">Balance owed over time</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">How quickly each option is paid down (lines of credit stay flat until maturity).</p>
       <Legend items={series.map((s) => ({ name: s.offer.label, color: s.color }))} />
-      <div className="chart">
+      <div className="h-64 w-full">
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             {GRID}
@@ -105,10 +105,10 @@ export function CashFlowChart({ series }: { series: Series[] }) {
     color: s.color,
   }))
   return (
-    <div className="card">
-      <h3>Cash flow used by debt payments</h3>
-      <p className="sub">Share of yearly EBITDA going to all debt payments after the loan. BofA's guideline caps it at 80% (1.25x coverage).</p>
-      <div className="chart">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">Cash flow used by debt payments</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">Share of yearly EBITDA going to all debt payments after the loan. BofA's guideline caps it at 80% (1.25x coverage).</p>
+      <div className="h-64 w-full">
         <ResponsiveContainer>
           <BarChart data={data} layout="vertical" margin={{ top: 22, right: 40, bottom: 0, left: 8 }} barCategoryGap="30%">
             <CartesianGrid stroke="var(--grid)" horizontal={false} />
@@ -144,11 +144,11 @@ export function ScoreBreakdownChart({ series }: { series: Series[] }) {
     return row
   })
   return (
-    <div className="card">
-      <h3>How the score is built</h3>
-      <p className="sub">Each component is rated 0–100, then weighted into the overall score.</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">How the score is built</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">Each component is rated 0–100, then weighted into the overall score.</p>
       <Legend box items={series.map((s) => ({ name: `${s.offer.label} — ${s.offer.score}`, color: s.color }))} />
-      <div className="chart tall">
+      <div className="h-80 w-full">
         <ResponsiveContainer>
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 8 }} barGap={2} barCategoryGap="22%">
             <CartesianGrid stroke="var(--grid)" horizontal={false} />
@@ -169,10 +169,10 @@ export function ScoreBreakdownChart({ series }: { series: Series[] }) {
 export function CapacityChart({ capacity, marker, markerLabel }: { capacity: Capacity; marker?: number; markerLabel?: string }) {
   const data = capacity.by_term.map((c) => ({ term: `${c.term_years} yr`, value: c.max_amount }))
   return (
-    <div className="card">
-      <h3>How much you could borrow</h3>
-      <p className="sub">Most you can borrow at each term while keeping at least 1.25x coverage and at most 4.0x leverage.</p>
-      <div className="chart">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">How much you could borrow</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">Most you can borrow at each term while keeping at least 1.25x coverage and at most 4.0x leverage.</p>
+      <div className="h-64 w-full">
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 20, right: 12, bottom: 0, left: 0 }} barCategoryGap="35%">
             {GRID}
@@ -193,10 +193,10 @@ export function CapacityChart({ capacity, marker, markerLabel }: { capacity: Cap
 /** Historical default rate by coverage bucket, highlighting where this loan sits. */
 export function HistoryChart({ curve, bucket, color }: { curve: HistoryPoint[]; bucket: string; color: string }) {
   return (
-    <div className="card">
-      <h3>What history says</h3>
-      <p className="sub">Default rate of past approved loans, grouped by coverage (DSCR) after the loan. Highlighted: where this loan falls.</p>
-      <div className="chart">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">What history says</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">Default rate of past approved loans, grouped by coverage (DSCR) after the loan. Highlighted: where this loan falls.</p>
+      <div className="h-64 w-full">
         <ResponsiveContainer>
           <BarChart data={curve} margin={{ top: 20, right: 12, bottom: 0, left: 0 }} barCategoryGap="20%">
             {GRID}
@@ -206,7 +206,7 @@ export function HistoryChart({ curve, bucket, color }: { curve: HistoryPoint[]; 
               cursor={{ fill: 'var(--surface-2)' }}
               content={({ active, payload }: TipProps) =>
                 active && payload?.length ? (
-                  <div className="tooltip">
+                  <div className="lc-tooltip">
                     <b>DSCR {String(payload[0].payload?.bucket)}</b>
                     <div>Default rate: {pct(Number(payload[0].payload?.default_rate), 1)}</div>
                     <div>Approval rate: {pct(Number(payload[0].payload?.approval_rate))}</div>
@@ -238,13 +238,13 @@ export function ComparablesChart({ comps, offer, color }: { comps: Comparables; 
     { name: 'This loan (AI model)', color },
   ]
   return (
-    <div className="card">
-      <h3>Compared with {comps.count} similar past loans</h3>
-      <p className="sub">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-[15px] font-bold text-slate-900">Compared with {comps.count} similar past loans</h3>
+      <p className="mt-0.5 mb-3 text-[13px] leading-snug text-slate-500">
         Nearest matches by size, margins, leverage, coverage, credit and industry. Their average rate was {comps.avg_rate_pct.toFixed(2)}%.
       </p>
       <Legend box items={items} />
-      <div className="chart">
+      <div className="h-64 w-full">
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 20, right: 12, bottom: 0, left: 0 }} barGap={2} barCategoryGap="30%">
             {GRID}

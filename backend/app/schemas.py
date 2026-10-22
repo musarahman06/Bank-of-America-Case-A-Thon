@@ -26,6 +26,7 @@ class OfferRequest(BaseModel):
     loan_type: LoanType = "Term Loan"
     desired_amount: Optional[float] = Field(default=None, gt=0)
     purpose: Optional[str] = None
+    explain: bool = True  # False = numbers only (live re-scoring), skips Gemini
 
 
 class EvaluateRequest(BaseModel):
@@ -35,3 +36,4 @@ class EvaluateRequest(BaseModel):
     term_years: int = Field(ge=1, le=30)
     rate_pct: Optional[float] = Field(default=None, gt=0, le=30)
     purpose: Optional[str] = None
+    explain: bool = True  # False = numbers only (live re-scoring), skips Gemini

@@ -109,8 +109,15 @@ export interface Capacity {
   meets_guidelines: boolean
 }
 
+export interface RiskMatrix {
+  amounts: number[]
+  terms: number[]
+  cells: { amount: number; term_years: number; risk: number; score: number }[]
+}
+
 interface Common {
   company: Company
+  risk_matrix: RiskMatrix
   capacity: Capacity
   factors: Factor[]
   comparables: Comparables
@@ -123,7 +130,7 @@ export interface OffersResult extends Common {
   desired_amount: number | null
   offers: Offer[]
   best_dscr_bucket: string
-  ai: {
+  ai: null | {
     headline: string
     summary: string
     offers: { label: string; why: string }[]
@@ -139,7 +146,7 @@ export interface EvaluateResult extends Common {
   flags: string[]
   alternatives: Offer[]
   request_dscr_bucket: string
-  ai: {
+  ai: null | {
     headline: string
     verdict_explanation: string
     holding_back: string[]
