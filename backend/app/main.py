@@ -11,7 +11,6 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
-from fastapi.middleware.cors import CORSMiddleware
 
 from . import engine
 from .explain import explain_evaluation, explain_offers
@@ -19,8 +18,9 @@ from .features import INDUSTRIES, LOAN_TYPES
 from .presets import PRESETS
 from .schemas import EvaluateRequest, OfferRequest
 
-app = FastAPI(title="BofA Loan Clarity API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+app = FastAPI(title="BofA Loan Clarity")
 
 
 @app.get("/api/meta")
@@ -48,3 +48,9 @@ async def evaluate(req: EvaluateRequest):
     )
     result["ai"] = await run_in_threadpool(explain_evaluation, result)
     return result
+
+
+# One app: the built React site is served alongside the API (API routes always win).
+# In local dev, Vite serves the frontend instead and proxies /api here.
+if FRONTEND_DIST.is_dir():
+    app.frontend("/", directory=FRONTEND_DIST)

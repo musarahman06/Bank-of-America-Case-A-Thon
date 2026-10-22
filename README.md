@@ -25,22 +25,25 @@
 
 ## Run it
 
-```bash
-# Backend (Python 3.12+)
-cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env          # optional: add GEMINI_API_KEY for AI explanations
-.venv/bin/python -m data.generate_data
-.venv/bin/python -m ml.train
-.venv/bin/uvicorn app.main:app --port 8000
-```
+It's one app: FastAPI serves both the API (`/api/...`) and the built React site (`/`).
 
 ```bash
-# Frontend (separate terminal)
-cd frontend
-npm install
-npm run dev                   # http://localhost:5173 (proxies /api to :8000)
+python3 -m venv .venv && .venv/bin/pip install -e .
+cp backend/.env.example backend/.env    # optional: add GEMINI_API_KEY for AI explanations
+.venv/bin/python build.py               # data -> models -> frontend bundle
+.venv/bin/uvicorn backend.app.main:app  # http://localhost:8000
 ```
+
+To work on the UI with hot reload, also run `npm run dev` in `frontend/` and open http://localhost:5173. It proxies `/api` to :8000.
+
+## Deploy on Vercel (one project)
+
+1. Push this repo to GitHub.
+2. On vercel.com: **Add New → Project**, import the repo, and leave **Root Directory** as the repo root. Vercel detects the FastAPI app from `pyproject.toml` (`tool.vercel.entrypoint`).
+3. Under **Environment Variables**, add `GEMINI_API_KEY` (and optionally `GEMINI_MODEL=gemini-3.8-flash`). Click **Deploy**.
+4. The deploy runs `build.py` (generates the data, trains the models, builds the React app). The whole site is then served from one URL.
+
+CLI alternative: `npm i -g vercel`, then run `vercel` (preview) and `vercel --prod` from the repo root.
 
 ## Demo script
 

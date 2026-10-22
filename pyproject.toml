@@ -1,0 +1,21 @@
+[project]
+name = "loan-clarity"
+version = "1.0.0"
+description = "AI loan offers for mid-market businesses (BofA Case-A-Thon)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.159.1",
+    "uvicorn[standard]==0.54.0",
+    "pandas==3.0.6",
+    "numpy==2.5.4",
+    "scikit-learn==1.9.1",
+    "joblib==1.6.0",
+    "google-genai==2.32.0",
+    "python-dotenv==1.2.4",
+]
+
+[tool.vercel]
+entrypoint = "backend.app.main:app"
+
+[tool.vercel.scripts]
+build = "python build.py"
