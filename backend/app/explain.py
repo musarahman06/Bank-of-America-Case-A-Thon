@@ -23,10 +23,15 @@ def _gemini():
 
 SYSTEM = (
     "You are a Bank of America commercial lending advisor explaining AI-generated loan analysis "
-    "to the CFO of a mid-market company. Be clear, specific and encouraging but honest. Use the numbers "
-    "provided, never invent figures. Scores are 1-100 (higher is better for the client); risk is 1-5 "
-    "(5 is riskiest). Keep each field to 1-3 short sentences. Respond with JSON only."
+    "to the CFO of a mid-market company (the client). Be clear, specific and encouraging but honest. Use the "
+    "numbers provided, never invent figures. Scores are 1-100 (higher is better for the client). This text is "
+    "client-facing: never mention default probability, internal risk tiers or numbers, how Bank of America "
+    "funds loans, or capital it holds. Describe risk only with the provided loan_health label. "
+    "Keep each field to 1-3 short sentences. Respond with JSON only."
 )
+
+# Client-facing wording for the internal 1-5 risk tier (mirrors frontend format.ts healthLabel).
+HEALTH = {1: "Strong fit", 2: "Strong fit", 3: "Moderate fit", 4: "Stretch", 5: "Hard to approve"}
 
 
 def _money(x):
@@ -34,9 +39,14 @@ def _money(x):
 
 
 def _slim_offer(o):
+    """Client-safe subset: no default probability or internal risk tier."""
     keys = ["label", "loan_type", "amount", "term_years", "rate_pct", "monthly_payment", "total_interest",
-            "score", "risk", "risk_label", "p_approval", "p_default", "post_dscr", "post_leverage"]
-    return {k: o[k] for k in keys}
+            "score", "p_approval", "post_dscr", "post_leverage"]
+    return {**{k: o[k] for k in keys}, "loan_health": HEALTH[o["risk"]]}
+
+
+def _client_comps(c):
+    return {k: c[k] for k in ("count", "approval_rate", "avg_rate_pct")}
 
 
 def _ask(payload, schema_hint):
@@ -67,7 +77,7 @@ def explain_offers(result):
         "capacity": result["capacity"]["max_amount"],
         "offers": [_slim_offer(o) for o in result["offers"]],
         "issues": issues,
-        "similar_historical_loans": result["comparables"],
+        "similar_historical_loans": _client_comps(result["comparables"]),
     }
     hint = (
         'Return JSON: {"headline": str, "summary": str, '
@@ -84,7 +94,7 @@ def explain_offers(result):
                     f"within BofA guidelines." if result["capacity"]["max_amount"] else
                     f"{result['company']['name']} does not currently meet BofA's coverage guidelines.",
         "summary": f"Our top pick is the {best['label']}: {_money(best['amount'])} over {best['term_years']} years "
-                   f"at {best['rate_pct']:.2f}%, scoring {best['score']}/100 with risk {best['risk']}/5. "
+                   f"at {best['rate_pct']:.2f}%, scoring {best['score']}/100 ({HEALTH[best['risk']].lower()}). "
                    f"Similar historical loans were approved {result['comparables']['approval_rate']:.0%} of the time.",
         "offers": [{"label": o["label"], "why": f"{o['tagline']}. Coverage after the loan would be "
                     f"{o['post_dscr']:.2f}x, with an estimated {o['p_approval']:.0%} approval likelihood."}
@@ -107,7 +117,7 @@ def explain_evaluation(result):
         "capacity": result["capacity"]["max_amount"],
         "issues": issues,
         "alternatives": [_slim_offer(a) for a in result["alternatives"]],
-        "similar_historical_loans": result["comparables"],
+        "similar_historical_loans": _client_comps(result["comparables"]),
     }
     hint = (
         'Return JSON: {"headline": str, "verdict_explanation": str, '
@@ -121,10 +131,10 @@ def explain_evaluation(result):
     best = max(result["alternatives"], key=lambda o: o["score"])
     return {
         "headline": f"{result['verdict']}: your {_money(req['amount'])} {req['loan_type'].lower()} scores "
-                    f"{req['score']}/100 with risk {req['risk']}/5.",
+                    f"{req['score']}/100 ({HEALTH[req['risk']].lower()}).",
         "verdict_explanation": f"After this loan your debt service coverage would be {req['post_dscr']:.2f}x and "
                                f"leverage {req['post_leverage']:.1f}x, with an estimated {req['p_approval']:.0%} "
-                               f"approval likelihood and {req['p_default']:.1%} default probability.",
+                               f"approval likelihood. Loan health: {HEALTH[req['risk']]}.",
         "holding_back": result["flags"] + [f"{f['factor']} is {f['value']} (target {f['benchmark']})."
                                            for f in issues[:3]],
         "how_to_improve": [f["tip"] for f in issues if f["tip"]][:3] or

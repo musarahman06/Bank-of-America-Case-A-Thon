@@ -133,7 +133,7 @@ const PARTS: { key: keyof Offer['score_breakdown']; label: string }[] = [
   { key: 'affordability', label: 'Affordability (25%)' },
   { key: 'cost', label: 'Cost (20%)' },
   { key: 'fit', label: 'Fit to need (15%)' },
-  { key: 'safety', label: 'Low risk (10%)' },
+  { key: 'safety', label: 'Loan health (10%)' },
 ]
 
 /** What drives each option's 1-100 score. */

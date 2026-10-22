@@ -1,10 +1,11 @@
-import { ChevronRight, Sparkles } from 'lucide-react'
+import { Briefcase, ChevronRight, Sparkles, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getMeta } from './api'
 import CompanyForm from './components/CompanyForm'
 import Landing from './pages/Landing'
 import OfferMode from './pages/OfferMode'
 import ReverseMode, { type RequestDraft } from './pages/ReverseMode'
+import { useView, ViewProvider } from './hooks/useView'
 import type { Company, Meta, Preset } from './types'
 
 type Mode = 'offers' | 'evaluate'
@@ -34,6 +35,44 @@ function Mark() {
 }
 
 export default function App() {
+  return (
+    <ViewProvider>
+      <AppShell />
+    </ViewProvider>
+  )
+}
+
+/** Client | Banker segmented switch (demo only; a real Banker view sits behind BofA sign-in). */
+function ViewSwitch() {
+  const { view, setView } = useView()
+  const opts = [
+    { v: 'client' as const, label: 'Client', Icon: UserRound, tip: 'Borrower view' },
+    { v: 'banker' as const, label: 'Banker', Icon: Briefcase, tip: 'Internal: relationship manager view' },
+  ]
+  return (
+    <div role="radiogroup" aria-label="Audience" className="flex flex-none rounded-full bg-slate-100 p-0.5 ring-1 ring-slate-200">
+      {opts.map(({ v, label, Icon, tip }) => (
+        <button
+          key={v}
+          role="radio"
+          aria-checked={view === v}
+          title={tip}
+          onClick={() => setView(v)}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition sm:px-3 ${
+            view === v ? (v === 'banker' ? 'bg-navy text-white shadow-sm' : 'bg-white text-navy shadow-sm') : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Icon size={13} />
+          <span className="hidden sm:inline">{label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function AppShell() {
+  const { view } = useView()
+  const banker = view === 'banker'
   const [meta, setMeta] = useState<Meta | null>(null)
   const [error, setError] = useState('')
   const [route, setRoute] = useState<Route>(readRoute)
@@ -80,10 +119,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-4 sm:gap-4 sm:px-6">
           <button className="flex flex-none items-center gap-2" onClick={() => go('home')} aria-label="Loan Clarity home">
             <Mark />
-            <span className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-navy">Loan Clarity</span>
+            <span className="hidden whitespace-nowrap text-[17px] font-extrabold tracking-tight text-navy min-[460px]:inline">Loan Clarity</span>
           </button>
           <span className="hidden h-6 w-px bg-slate-200 md:block" />
           <nav className="flex h-16 items-stretch gap-1 overflow-x-auto" aria-label="Main">
@@ -101,7 +140,10 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <div className="ml-auto hidden items-center gap-2 sm:flex">
+          <div className="ml-auto flex items-center gap-2">
+            <ViewSwitch />
+          </div>
+          <div className="hidden items-center gap-2 lg:flex">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
                 meta?.ai_enabled ? 'bg-navy-50 text-navy ring-navy/15' : 'bg-slate-100 text-slate-500 ring-slate-300'
@@ -141,9 +183,13 @@ export default function App() {
               )}
             </h1>
             <p className="mt-2 max-w-3xl text-[15px] text-slate-600">
-              {mode === 'offers'
-                ? 'Three tailored offers built from your financials and 6,000 historical loans. Each is scored 1–100 (higher is better) and rated for risk 1–5 (5 is riskiest).'
-                : 'Adjust the loan you have in mind. The live scorecard updates as you go; run the full analysis for explanations and better-scoring alternatives.'}
+              {banker
+                ? mode === 'offers'
+                  ? 'Banker view: the client’s three offers plus internal underwriting detail (risk tier 1–5, default probability, comparables, heat matrix and how BofA funds the loan).'
+                  : 'Banker view: evaluate the client’s requested loan with internal underwriting detail (risk tier 1–5, default probability, comparables and funding/capital).'
+                : mode === 'offers'
+                  ? 'Three tailored offers built from your financials and 6,000 historical loans. Each is scored 1–100 (higher is better) with a plain-language loan health rating.'
+                  : 'Adjust the loan you have in mind. The live scorecard updates as you go; run the full analysis for explanations and better-scoring alternatives.'}
             </p>
           </div>
           {error && (

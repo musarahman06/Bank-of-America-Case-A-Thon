@@ -1,5 +1,5 @@
-import { RISK_COLORS, scoreStatus } from '../format'
-import Badge from '../ui/Badge'
+import { healthLabel, RISK_COLORS, scoreStatus } from '../format'
+import Badge, { riskTone } from '../ui/Badge'
 
 /** Compact score ring (1-100, higher is better). */
 export function ScoreBadge({ score }: { score: number }) {
@@ -51,6 +51,15 @@ export function StatusTag({ status }: { status: keyof typeof STATUS }) {
   return (
     <Badge tone={s.tone} dot>
       {s.label}
+    </Badge>
+  )
+}
+
+/** Client-facing loan health label (replaces the internal risk tier in Client view). */
+export function HealthBadge({ risk }: { risk: number }) {
+  return (
+    <Badge tone={riskTone(risk)} dot>
+      {healthLabel(risk)}
     </Badge>
   )
 }

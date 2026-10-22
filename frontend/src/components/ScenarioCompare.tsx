@@ -1,4 +1,6 @@
 import { money, moneyFull, pct } from '../format'
+import { useIsBanker } from '../hooks/useView'
+import { HealthBadge } from './Badges'
 import type { Offer } from '../types'
 import Badge, { riskTone } from '../ui/Badge'
 import Card from '../ui/Card'
@@ -17,6 +19,7 @@ function Spark({ data, color }: { data: number[]; color: string }) {
 }
 
 function Side({ offer, title, sub, head }: { offer: Offer; title: string; sub: string; head: 'navy' | 'crimson' }) {
+  const banker = useIsBanker()
   const color = head === 'navy' ? '#012169' : '#e31837'
   const rows: [string, string][] = [
     ['Amount', money(offer.amount)],
@@ -46,10 +49,14 @@ function Side({ offer, title, sub, head }: { offer: Offer; title: string; sub: s
           </div>
         ))}
         <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Risk</span>
-          <Badge tone={riskTone(offer.risk)} dot>
-            {offer.risk}/5 · {offer.risk_label}
-          </Badge>
+          <span className="text-slate-500">{banker ? 'Risk tier' : 'Loan health'}</span>
+          {banker ? (
+            <Badge tone={riskTone(offer.risk)} dot>
+              {offer.risk}/5 · {offer.risk_label}
+            </Badge>
+          ) : (
+            <HealthBadge risk={offer.risk} />
+          )}
         </div>
       </div>
     </div>

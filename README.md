@@ -21,7 +21,7 @@
 | `frontend/` | React + Vite + TypeScript + Tailwind v4 + Recharts. BofA Executive Fintech theme; designs in `design-refs/`. Live scorecards re-score as you drag sliders (numbers only); the full analysis adds Gemini explanations. |
 
 **Score (1–100)** = 30% approval odds + 25% affordability (post-loan DSCR) + 20% cost (APR) + 15% fit to the amount needed + 10% low risk.
-**Risk (1–5)** buckets the predicted default probability: <2%, 2–5%, 5–10%, 10–20%, >20%.
+**Risk (1–5)** buckets the predicted default probability: <2%, 2–5%, 5–10%, 10–20%, >20%. Clients see it as a loan-health label; the 1–5 tier is shown in Banker view.
 
 ## Run it
 
@@ -50,6 +50,7 @@ CLI alternative: `npm i -g vercel`, then run `vercel` (preview) and `vercel --pr
 1. **Get Loan Offers** → load *Precision Parts Co.*: strong profile, scores in the 90s, risk 1.
 2. Load *Harbor Home Goods* (leveraged retailer): lower scores, risk 3–4, and the "holding you back" table shows margin and leverage as the problems.
 3. **Evaluate My Loan** with Harbor's $30M request: **Not Recommended** (score ~22, risk 5). The alternatives score about 40 points higher.
-4. Click different offer cards to watch the funding Sankey re-allocate. Riskier loans tie up more BofA capital.
+4. Flip the navbar switch to **Banker** view: the same analysis now shows the internal underwriting detail (risk tier 1–5, default probability, comparables, risk heat matrix, Credit view card). Click different offer cards to watch the funding Sankey re-allocate; riskier loans tie up more BofA capital.
+5. Flip back to **Client** view: the borrower sees plain-language loan health instead, and none of BofA's internal funding or default figures.
 
 *Data is synthetic and the funding allocation is illustrative. This is a case-competition prototype, not a credit decision.*

@@ -4,7 +4,8 @@ import { evaluateLoan } from '../api'
 import { BalanceChart, CapacityChart, CashFlowChart, ComparablesChart, HistoryChart, ScoreBreakdownChart } from '../charts/Charts'
 import FundingSankey from '../charts/FundingSankey'
 import ScoreRadar from '../charts/ScoreRadar'
-import { RiskMeter } from '../components/Badges'
+import { HealthBadge, RiskMeter } from '../components/Badges'
+import CreditView from '../components/CreditView'
 import FactorsTable from '../components/FactorsTable'
 import KpiRow from '../components/KpiRow'
 import OfferCard from '../components/OfferCard'
@@ -12,6 +13,7 @@ import RiskHeatMatrix from '../components/RiskHeatMatrix'
 import ScenarioCompare from '../components/ScenarioCompare'
 import { money, moneyFull, pct, REQUEST_COLOR, SERIES } from '../format'
 import { useDebounced } from '../hooks/useDebounced'
+import { useIsBanker } from '../hooks/useView'
 import type { Company, EvaluateResult, Meta } from '../types'
 import Badge, { type Tone } from '../ui/Badge'
 import Card from '../ui/Card'
@@ -55,6 +57,7 @@ export default function ReverseMode({ meta, company, companyForm, initial }: Pro
   const [liveLoading, setLiveLoading] = useState(false)
   const [openStep, setOpenStep] = useState(1)
   const liveSeq = useRef(0)
+  const banker = useIsBanker()
 
   // Debounce a stable string key: a fresh object each render would never settle.
   const inputsKey = useDebounced(JSON.stringify({ company, loanType, amount, term, rate }), 350)
@@ -195,8 +198,9 @@ export default function ReverseMode({ meta, company, companyForm, initial }: Pro
                     <span className="inline-flex items-center gap-1.5"><i className="h-2 w-3 rounded-sm bg-navy" /> Score</span>
                     <span className="inline-flex items-center gap-1.5"><i className="h-2 w-3 rounded-sm bg-crimson" /> Approval odds {pct(lr.p_approval)}</span>
                   </div>
-                  <div className="mt-4 flex justify-center">
-                    <RiskMeter risk={lr.risk} />
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
+                    {banker && <RiskMeter risk={lr.risk} />}
+                    <HealthBadge risk={lr.risk} />
                   </div>
                   <ScoreRadar offer={lr} height={220} />
                   <div className="divide-y divide-slate-100 rounded-lg border border-slate-100">
@@ -204,7 +208,7 @@ export default function ReverseMode({ meta, company, companyForm, initial }: Pro
                       ['Coverage after loan', `${lr.post_dscr.toFixed(2)}x`, lr.post_dscr >= 1.25 ? 'good' : 'critical', '≥ 1.25x'],
                       ['Leverage after loan', `${lr.post_leverage.toFixed(1)}x`, lr.post_leverage <= 4 ? 'good' : 'critical', '≤ 4.0x'],
                       ['Monthly payment', moneyFull(lr.monthly_payment), 'neutral', `${lr.rate_pct.toFixed(2)}%`],
-                      ['Default probability', pct(lr.p_default, 1), lr.risk <= 2 ? 'good' : lr.risk === 3 ? 'warn' : 'critical', `risk ${lr.risk}/5`],
+                      ...(banker ? [['Default probability', pct(lr.p_default, 1), lr.risk <= 2 ? 'good' : lr.risk === 3 ? 'warn' : 'critical', `risk ${lr.risk}/5`]] : []),
                     ].map(([k, v, tone, note]) => (
                       <div key={k} className="flex items-center justify-between gap-3 px-3 py-2.5">
                         <span className="text-[13px] text-slate-600">{k}</span>
@@ -292,8 +296,10 @@ export default function ReverseMode({ meta, company, companyForm, initial }: Pro
 
           <div className="grid gap-6 xl:grid-cols-2">
             {bestAlt && <ScenarioCompare a={req} b={bestAlt} aTitle="Your request" bTitle={bestAlt.label} />}
-            <RiskHeatMatrix matrix={result.risk_matrix} highlight={{ amount: req.amount, term_years: req.term_years }} />
+            {banker && <CreditView offer={req} comps={result.comparables} flags={result.flags} />}
           </div>
+
+          {banker && <RiskHeatMatrix matrix={result.risk_matrix} highlight={{ amount: req.amount, term_years: req.term_years }} />}
 
           <div id="alternatives" className="scroll-mt-24">
             <h3 className="mb-3 text-lg font-bold text-slate-900">Recommended alternatives</h3>
@@ -320,15 +326,18 @@ export default function ReverseMode({ meta, company, companyForm, initial }: Pro
             <CapacityChart capacity={result.capacity} marker={req.amount} markerLabel={`Your request ${money(req.amount)}`} />
           </div>
 
-          <FundingSankey
-            funding={series[selected].offer.funding}
-            title={selected === 0 ? 'Your requested loan (click an alternative to compare)' : `${series[selected].offer.label} alternative`}
-          />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <HistoryChart curve={result.history_curve} bucket={result.request_dscr_bucket} color={REQUEST_COLOR} />
-            <ComparablesChart comps={result.comparables} offer={req} color={REQUEST_COLOR} />
-          </div>
+          {banker && (
+            <>
+              <FundingSankey
+                funding={series[selected].offer.funding}
+                title={selected === 0 ? 'Requested loan (click an alternative to compare)' : `${series[selected].offer.label} alternative`}
+              />
+              <div className="grid gap-6 lg:grid-cols-2">
+                <HistoryChart curve={result.history_curve} bucket={result.request_dscr_bucket} color={REQUEST_COLOR} />
+                <ComparablesChart comps={result.comparables} offer={req} color={REQUEST_COLOR} />
+              </div>
+            </>
+          )}
 
           <FactorsTable factors={result.factors} />
         </div>

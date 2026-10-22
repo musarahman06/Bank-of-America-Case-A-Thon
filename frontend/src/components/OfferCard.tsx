@@ -1,7 +1,8 @@
 import { Star } from 'lucide-react'
 import { money, moneyFull, pct } from '../format'
 import type { Offer } from '../types'
-import { RiskMeter, ScoreBadge } from './Badges'
+import { useIsBanker } from '../hooks/useView'
+import { HealthBadge, RiskMeter, ScoreBadge } from './Badges'
 
 interface Props {
   offer: Offer
@@ -14,6 +15,7 @@ interface Props {
 
 /** Scenario-style offer card: colored header band, big amount, key terms. */
 export default function OfferCard({ offer, color, selected, onSelect, why, compareTo }: Props) {
+  const banker = useIsBanker()
   return (
     <div
       role="button"
@@ -47,7 +49,10 @@ export default function OfferCard({ offer, color, selected, onSelect, why, compa
           <ScoreBadge score={offer.score} />
         </div>
 
-        <RiskMeter risk={offer.risk} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {banker && <RiskMeter risk={offer.risk} />}
+          <HealthBadge risk={offer.risk} />
+        </div>
 
         <dl className="grid grid-cols-2 divide-x divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 text-sm">
           {[

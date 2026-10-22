@@ -6,7 +6,7 @@ const AXES: { key: keyof Offer['score_breakdown']; label: string }[] = [
   { key: 'affordability', label: 'Affordability' },
   { key: 'cost', label: 'Cost' },
   { key: 'fit', label: 'Fit' },
-  { key: 'safety', label: 'Low risk' },
+  { key: 'safety', label: 'Loan health' },
 ]
 
 /** Radar of the five score components (0-100 each); optional comparison overlay. */

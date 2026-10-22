@@ -28,3 +28,8 @@ export const RISK_COLORS: Record<number, string> = {
   4: 'var(--status-serious)',
   5: 'var(--status-critical)',
 }
+
+// Client-facing wording for the internal 1-5 risk tier (mirrors backend explain.py HEALTH).
+export function healthLabel(risk: number) {
+  return risk <= 2 ? 'Strong fit' : risk === 3 ? 'Moderate fit' : risk === 4 ? 'Stretch' : 'Hard to approve'
+}

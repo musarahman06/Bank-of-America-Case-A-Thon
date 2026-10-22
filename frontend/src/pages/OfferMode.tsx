@@ -4,6 +4,7 @@ import { getOffers } from '../api'
 import { BalanceChart, CapacityChart, CashFlowChart, ComparablesChart, HistoryChart, ScoreBreakdownChart } from '../charts/Charts'
 import FundingSankey from '../charts/FundingSankey'
 import ScoreRadar from '../charts/ScoreRadar'
+import CreditView from '../components/CreditView'
 import FactorsTable from '../components/FactorsTable'
 import KpiRow from '../components/KpiRow'
 import OfferCard from '../components/OfferCard'
@@ -11,7 +12,9 @@ import RiskHeatMatrix from '../components/RiskHeatMatrix'
 import ScenarioCompare from '../components/ScenarioCompare'
 import { money, SERIES } from '../format'
 import { useDebounced } from '../hooks/useDebounced'
+import { useIsBanker } from '../hooks/useView'
 import type { Company, Meta, OffersResult } from '../types'
+import { HealthBadge } from '../components/Badges'
 import Badge, { riskTone } from '../ui/Badge'
 import Card from '../ui/Card'
 import PillGroup from '../ui/PillGroup'
@@ -41,6 +44,7 @@ export default function OfferMode({ meta, company, companyForm }: Props) {
   const [liveLoading, setLiveLoading] = useState(false)
   const [openStep, setOpenStep] = useState(1)
   const liveSeq = useRef(0)
+  const banker = useIsBanker()
 
   // Debounce a stable string key: a fresh object each render would never settle.
   const inputsKey = useDebounced(JSON.stringify({ company, loanType, desired }), 400)
@@ -142,7 +146,13 @@ export default function OfferMode({ meta, company, companyForm }: Props) {
             <Card
               title="Live preview"
               sub="Your top offer updates as you change the inputs"
-              action={liveLoading ? <Loader2 size={16} className="animate-spin text-slate-400" /> : liveBest && <Badge tone={riskTone(liveBest.risk)} dot>Risk {liveBest.risk}/5</Badge>}
+              action={
+                liveLoading ? (
+                  <Loader2 size={16} className="animate-spin text-slate-400" />
+                ) : (
+                  liveBest && (banker ? <Badge tone={riskTone(liveBest.risk)} dot>Risk {liveBest.risk}/5</Badge> : <HealthBadge risk={liveBest.risk} />)
+                )
+              }
             >
               {live && liveBest ? (
                 <div className={`transition-opacity ${liveLoading ? 'opacity-60' : ''}`}>
@@ -242,8 +252,10 @@ export default function OfferMode({ meta, company, companyForm }: Props) {
 
           <div className="grid gap-6 xl:grid-cols-2">
             {other && <ScenarioCompare a={best} b={other} aTitle={best.label} bTitle={other.label} />}
-            <RiskHeatMatrix matrix={result.risk_matrix} highlight={{ amount: best.amount, term_years: best.term_years }} />
+            {banker && <CreditView offer={best} comps={result.comparables} />}
           </div>
+
+          {banker && <RiskHeatMatrix matrix={result.risk_matrix} highlight={{ amount: best.amount, term_years: best.term_years }} />}
 
           <div className="grid gap-6 lg:grid-cols-2">
             <BalanceChart series={series} />
@@ -254,12 +266,15 @@ export default function OfferMode({ meta, company, companyForm }: Props) {
             <CapacityChart capacity={result.capacity} marker={result.desired_amount ?? undefined} markerLabel="You need" />
           </div>
 
-          {sel && <FundingSankey funding={sel.offer.funding} title={`${sel.offer.label} offer (click a card to switch)`} />}
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <HistoryChart curve={result.history_curve} bucket={result.best_dscr_bucket} color={SERIES[bestIdx]} />
-            <ComparablesChart comps={result.comparables} offer={best} color={SERIES[bestIdx]} />
-          </div>
+          {banker && (
+            <>
+              {sel && <FundingSankey funding={sel.offer.funding} title={`${sel.offer.label} offer (click a card to switch)`} />}
+              <div className="grid gap-6 lg:grid-cols-2">
+                <HistoryChart curve={result.history_curve} bucket={result.best_dscr_bucket} color={SERIES[bestIdx]} />
+                <ComparablesChart comps={result.comparables} offer={best} color={SERIES[bestIdx]} />
+              </div>
+            </>
+          )}
 
           <FactorsTable factors={result.factors} />
 

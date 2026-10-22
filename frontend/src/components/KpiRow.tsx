@@ -1,4 +1,5 @@
-import { pct } from '../format'
+import { healthLabel, pct } from '../format'
+import { useIsBanker } from '../hooks/useView'
 import type { Offer } from '../types'
 import { riskTone, scoreTone } from '../ui/Badge'
 import Stat from '../ui/Stat'
@@ -7,6 +8,7 @@ const RISK_NAMES = ['', 'Very low', 'Low', 'Moderate', 'Elevated', 'High']
 
 /** 4-column KPI summary for one offer/request; sparkline = remaining balance paydown. */
 export default function KpiRow({ offer }: { offer: Offer }) {
+  const banker = useIsBanker()
   const paydown = offer.balances.map((b) => b.balance)
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -18,13 +20,23 @@ export default function KpiRow({ offer }: { offer: Offer }) {
         spark={paydown}
         sparkColor="#012169"
       />
-      <Stat
-        label="Risk tier"
-        sub={`${pct(offer.p_default, 1)} default probability`}
-        value={`${offer.risk}/5`}
-        accent={offer.risk >= 4 ? 'crimson' : 'navy'}
-        badge={{ text: RISK_NAMES[offer.risk], tone: riskTone(offer.risk) }}
-      />
+      {banker ? (
+        <Stat
+          label="Risk tier"
+          sub={`${pct(offer.p_default, 1)} default probability`}
+          value={`${offer.risk}/5`}
+          accent={offer.risk >= 4 ? 'crimson' : 'navy'}
+          badge={{ text: RISK_NAMES[offer.risk], tone: riskTone(offer.risk) }}
+        />
+      ) : (
+        <Stat
+          label="Loan health"
+          sub="How comfortably this loan fits"
+          value={<span className="text-[22px]">{healthLabel(offer.risk)}</span>}
+          accent={offer.risk >= 4 ? 'crimson' : 'navy'}
+          badge={{ text: offer.risk <= 2 ? 'Healthy' : offer.risk === 3 ? 'OK' : 'At risk', tone: riskTone(offer.risk) }}
+        />
+      )}
       <Stat
         label="Approval odds"
         sub="From the approval model"

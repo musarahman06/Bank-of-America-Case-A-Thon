@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { Reveal } from '../hooks/useReveal'
 import type { Meta } from '../types'
-import Badge, { riskTone, scoreTone } from '../ui/Badge'
+import { HealthBadge } from '../components/Badges'
+import Badge, { scoreTone } from '../ui/Badge'
 import Card from '../ui/Card'
 import RadialGauge from '../ui/RadialGauge'
 import Stat from '../ui/Stat'
@@ -23,10 +24,10 @@ const SAMPLE_OFFERS = [
 
 const STEPS = [
   ['Share financials', 'Eight numbers you already know, or upload a CSV.'],
-  ['Model checks history', '6,000 historical loans estimate approval and default odds.'],
+  ['Model checks history', 'Your profile is compared with 6,000 historical loans.'],
   ['Three scored offers', 'Best Match, Maximum Capacity and Lowest Cost.'],
   ['Evaluate your own', 'See what holds your loan back, plus better options.'],
-  ['Follow the money', 'How BofA funds it: deposits, debt and capital.'],
+  ['Talk to your banker', 'Your relationship manager sees the same answer, with underwriting detail.'],
 ] as const
 
 const WEIGHTS = [
@@ -34,15 +35,15 @@ const WEIGHTS = [
   { part: 'Affordability', w: 25 },
   { part: 'Cost', w: 20 },
   { part: 'Fit to need', w: 15 },
-  { part: 'Low risk', w: 10 },
+  { part: 'Loan health', w: 10 },
 ]
 
 const FAQ = [
   ['What is Loan Clarity?', 'A Case-A-Thon prototype that gives mid-market businesses an instant, explainable view of what they can borrow from Bank of America, instead of waiting weeks for a decision.'],
-  ['How is the 1–100 score calculated?', 'It blends approval likelihood (30%), affordability after the loan (25%), cost (20%), fit to the amount you need (15%) and low risk (10%). Higher is better for you.'],
-  ['What does the 1–5 risk rating mean?', 'It buckets the model’s predicted default probability: under 2% is 1 (very low), and above 20% is 5 (high).'],
+  ['How is the 1–100 score calculated?', 'It blends approval likelihood (30%), affordability after the loan (25%), cost (20%), fit to the amount you need (15%) and loan health (10%). Higher is better for you.'],
+  ['What does “loan health” mean?', 'A plain-language read on how comfortably a loan fits your business: Strong fit, Moderate fit, Stretch or Hard to approve. It comes from the same model your banker uses.'],
   ['Is this real Bank of America loan data?', 'No. BofA’s internal loan history is not public, so the models are trained on a synthetic, seeded dataset designed to behave like a real mid-market loan book.'],
-  ['Where do the funding numbers come from?', 'From Bank of America’s 4Q25 investor presentation. The loan is allocated across that funding mix for illustration, plus the capital regulators require for its risk.'],
+  ['What is the Banker view?', 'An internal view for Bank of America relationship managers. It adds the underwriting detail behind each answer: a 1–5 risk tier, default probability, comparable past loans, a risk heat matrix and how BofA would fund the loan (illustrative, from its 4Q25 investor presentation). In this demo it is a switch; in production it would sit behind BofA sign-in.'],
   ['Is this a credit decision?', 'No. It is a decision-support demo. A relationship manager and full underwriting would confirm any real offer.'],
 ] as const
 
@@ -102,7 +103,7 @@ export default function Landing({ meta, onStart }: Props) {
                 {[
                   ['$57.8M', 'Amount'],
                   ['6.49%', 'Rate'],
-                  ['1/5', 'Risk'],
+                  ['Strong', 'Health'],
                 ].map(([v, k]) => (
                   <div key={k} className="py-2">
                     <p className="font-mono text-sm font-bold tabular-nums">{v}</p>
@@ -180,7 +181,7 @@ export default function Landing({ meta, onStart }: Props) {
                   </div>
                   <div className="flex flex-none items-center gap-2">
                     <Badge tone={scoreTone(o.score)}>Score {o.score}</Badge>
-                    <Badge tone={riskTone(o.risk)} dot>Risk {o.risk}</Badge>
+                    <HealthBadge risk={o.risk} />
                   </div>
                 </li>
               ))}
@@ -192,7 +193,7 @@ export default function Landing({ meta, onStart }: Props) {
           <Card title="Built for clarity" sub="What every answer includes">
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                [Gauge, 'Score + risk', 'Every option scored 1–100 and risk-rated 1–5.'],
+                [Gauge, 'Score + loan health', 'Every option scored 1–100 with a plain-language health rating.'],
                 [ShieldCheck, 'What holds you back', 'Each factor checked against BofA guidelines, with a what-if.'],
                 [Database, 'Grounded in history', 'Compared with the most similar past loans.'],
                 [Clock, 'Around the clock', CITIES.map(([c, tz]) => `${c} ${now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`).join(' · ')],
@@ -231,7 +232,7 @@ export default function Landing({ meta, onStart }: Props) {
         <div>
           <h2 className="text-2xl font-extrabold tracking-tight">Ready to see your offers?</h2>
           <p className="mt-1 text-sm text-white/70">
-            Case-A-Thon prototype · synthetic training data · not a credit decision · funding figures illustrative (BofA 4Q25).
+            Case-A-Thon prototype · synthetic training data · not a credit decision · Banker view includes illustrative BofA funding figures (4Q25).
           </p>
         </div>
         <button onClick={() => onStart('offers')} className="inline-flex flex-none items-center gap-2 rounded-lg bg-crimson px-5 py-3 text-sm font-bold text-white transition hover:bg-crimson-600">
