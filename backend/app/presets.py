@@ -1,0 +1,55 @@
+"""Demo companies for the pitch."""
+
+PRESETS = [
+    {
+        "id": "healthy-manufacturer",
+        "label": "Precision Parts Co. (healthy manufacturer)",
+        "company": {
+            "name": "Precision Parts Co.",
+            "industry": "Manufacturing",
+            "years_in_business": 28,
+            "annual_revenue": 180_000_000,
+            "ebitda_margin": 0.17,
+            "revenue_growth": 0.07,
+            "current_ratio": 2.1,
+            "credit_score": 765,
+            "existing_debt": 25_000_000,
+            "collateral_value": 60_000_000,
+        },
+        "request": {"loan_type": "Equipment Financing", "amount": 20_000_000, "term_years": 5},
+    },
+    {
+        "id": "growing-tech",
+        "label": "CloudLedger Inc. (fast-growing tech)",
+        "company": {
+            "name": "CloudLedger Inc.",
+            "industry": "Technology",
+            "years_in_business": 6,
+            "annual_revenue": 65_000_000,
+            "ebitda_margin": 0.11,
+            "revenue_growth": 0.32,
+            "current_ratio": 1.5,
+            "credit_score": 712,
+            "existing_debt": 9_000_000,
+            "collateral_value": 8_000_000,
+        },
+        "request": {"loan_type": "Term Loan", "amount": 15_000_000, "term_years": 5},
+    },
+    {
+        "id": "leveraged-retailer",
+        "label": "Harbor Home Goods (leveraged retailer)",
+        "company": {
+            "name": "Harbor Home Goods",
+            "industry": "Retail",
+            "years_in_business": 14,
+            "annual_revenue": 240_000_000,
+            "ebitda_margin": 0.06,
+            "revenue_growth": -0.04,
+            "current_ratio": 1.05,
+            "credit_score": 664,
+            "existing_debt": 48_000_000,
+            "collateral_value": 30_000_000,
+        },
+        "request": {"loan_type": "Term Loan", "amount": 30_000_000, "term_years": 7},
+    },
+]
